@@ -1,3 +1,7 @@
+# Created by https://www.toptal.com/developers/gitignore/api/go,vim,linux
+# Edit at https://www.toptal.com/developers/gitignore?templates=go,vim,linux
+
+### Go ###
 # If you prefer the allow list template instead of the deny list, see community template:
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
@@ -19,7 +23,57 @@
 
 # Go workspace file
 go.work
-go.work.sum
 
-# env file
+### Linux ###
+*~
+
+# temporary files which can be created if a process still has a handle open of a deleted file
+.fuse_hidden*
+
+# KDE directory preferences
+.directory
+
+# Linux trash folder which might appear on any partition or disk
+.Trash-*
+
+# .nfs files are created when an open file is removed but is still being accessed
+.nfs*
+
+### Vim ###
+# Swap
+[._]*.s[a-v][a-z]
+!*.svg  # comment out if you don't need vector files
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Neovim swap files
+*.swp
+*.swo
+
+# Neovim backup files
+*.bak
+
+# Neovim undo files
+*.un~
+
+# Neovim plugin directories
+plugged/
+.log
+*.log.*
+*.log
+
+# Session
+Session.vim
+Sessionx.vim
+
+# Temporary
+.netrwhist
+# Auto-generated tag files
+tags
+# Persistent undo
+[._]*.un~
+
+# End of https://www.toptal.com/developers/gitignore/api/go,vim,linux
 .env
