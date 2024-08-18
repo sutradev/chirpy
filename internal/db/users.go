@@ -8,10 +8,11 @@ import (
 )
 
 type User struct {
-	ID       int          `json:"id"`
-	Email    string       `json:"email"`
-	Password string       `json:"password"`
-	AuthData RefreshToken `json:"authData"`
+	ID          int          `json:"id"`
+	Email       string       `json:"email"`
+	Password    string       `json:"password"`
+	AuthData    RefreshToken `json:"authData"`
+	IsChirpyRed bool         `json:"is_chirpy_red"`
 }
 
 type RefreshToken struct {
@@ -21,9 +22,10 @@ type RefreshToken struct {
 }
 
 type ResponseUser struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
-	Token string `json:"token"`
+	ID          int    `json:"id"`
+	Email       string `json:"email"`
+	Token       string `json:"token"`
+	IsChirpyRed bool   `json:"is_chirpy_red"`
 }
 
 func (db *DB) CreateUser(email string, pass string, secret string) (ResponseUser, error) {
@@ -39,16 +41,18 @@ func (db *DB) CreateUser(email string, pass string, secret string) (ResponseUser
 	}
 
 	user := User{
-		ID:       id,
-		Email:    email,
-		Password: string(savedPass),
+		ID:          id,
+		Email:       email,
+		Password:    string(savedPass),
+		IsChirpyRed: false,
 	}
 
 	dbStructure.Users[id] = user
 
 	responseUser := ResponseUser{
-		ID:    id,
-		Email: email,
+		ID:          id,
+		Email:       email,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 
 	err = db.writeDB(dbStructure)
@@ -102,6 +106,7 @@ func (db *DB) UpdateUser(id int, email string, pass string) (User, error) {
 			DateMade:       oldUser.AuthData.DateMade,
 			ExpirationDate: oldUser.AuthData.ExpirationDate,
 		},
+		IsChirpyRed: oldUser.IsChirpyRed,
 	}
 
 	dbStructure.Users[id] = updatedUser
@@ -132,6 +137,7 @@ func (db *DB) StoreRefreshToken(id int, token string) error {
 			DateMade:       time.Now().UTC(),
 			ExpirationDate: time.Now().UTC().Add(time.Hour * 24 * 60),
 		},
+		IsChirpyRed: user.IsChirpyRed,
 	}
 	dbStructure.Users[id] = updatedUser
 	err = db.writeDB(dbStructure)
@@ -168,6 +174,31 @@ func (db *DB) DeleteRefreshToken(user User) bool {
 			DateMade:       time.Time{},
 			ExpirationDate: time.Time{},
 		},
+		IsChirpyRed: user.IsChirpyRed,
+	}
+	dbStructure.Users[user.ID] = updatedUser
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func (db *DB) UpgradeRedMember(user User) bool {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return false
+	}
+	updatedUser := User{
+		ID:       user.ID,
+		Email:    user.Email,
+		Password: user.Password,
+		AuthData: RefreshToken{
+			Token:          user.AuthData.Token,
+			DateMade:       user.AuthData.DateMade,
+			ExpirationDate: user.AuthData.ExpirationDate,
+		},
+		IsChirpyRed: true,
 	}
 	dbStructure.Users[user.ID] = updatedUser
 	err = db.writeDB(dbStructure)

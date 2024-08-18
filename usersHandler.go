@@ -25,9 +25,10 @@ func (cfg *apiConfig) handlePOSTUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	modifiedUser := database.ResponseUser{
-		ID:    returnUser.ID,
-		Email: returnUser.Email,
-		Token: returnUser.Token,
+		ID:          returnUser.ID,
+		Email:       returnUser.Email,
+		Token:       returnUser.Token,
+		IsChirpyRed: returnUser.IsChirpyRed,
 	}
 	jsonReturn, err := json.Marshal(modifiedUser)
 	if err != nil {
@@ -86,6 +87,7 @@ func (cfg *apiConfig) handlePOSTLogin(w http.ResponseWriter, r *http.Request) {
 		Email         string `json:"email"`
 		Token         string `json:"token"`
 		Refresh_Token string `json:"refresh_token"`
+		IsChirpyRed   bool   `json:"is_chirpy_red"`
 	}
 
 	modifiedUser := returnParam{
@@ -93,6 +95,7 @@ func (cfg *apiConfig) handlePOSTLogin(w http.ResponseWriter, r *http.Request) {
 		Email:         user.Email,
 		Token:         signedToken,
 		Refresh_Token: refreshToken,
+		IsChirpyRed:   user.IsChirpyRed,
 	}
 
 	jsonReturn, err := json.Marshal(modifiedUser)

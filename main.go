@@ -13,11 +13,13 @@ type apiConfig struct {
 	fileserverHits int
 	db             *database.DB
 	jwtSecret      string
+	polkaApiKey    string
 }
 
 func main() {
 	godotenv.Load()
 	jwtSecret := os.Getenv("JWT_SECRET")
+	polkaApiKey := os.Getenv("API_KEY")
 	const filepathRoot = "."
 	const port = "8080"
 
@@ -29,6 +31,7 @@ func main() {
 		fileserverHits: 0,
 		db:             db,
 		jwtSecret:      jwtSecret,
+		polkaApiKey:    polkaApiKey,
 	}
 
 	mux := http.NewServeMux()
@@ -55,6 +58,8 @@ func main() {
 	mux.HandleFunc("POST /api/login", cfg.handlePOSTLogin)
 	mux.HandleFunc("POST /api/refresh", cfg.handlePOSTRefresh)
 	mux.HandleFunc("POST /api/revoke", cfg.handlePOSTRevoke)
+
+	mux.HandleFunc("POST /api/polka/webhooks", cfg.handlePolkaWebHook)
 
 	srv := &http.Server{
 		Addr:    ":" + port,

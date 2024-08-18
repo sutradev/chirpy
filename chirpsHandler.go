@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -34,8 +35,6 @@ func (cfg *apiConfig) handlePOSTChirps(w http.ResponseWriter, r *http.Request) {
 	jsonStruct := database.Chirp{}
 	err = decoder.Decode(&jsonStruct)
 	if err != nil {
-		// an error will be thrown if the JSON is invalid or has the wrong types
-		// any missing fields will simply have their values in the struct set to their zero value
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(500)
 		w.Write([]byte(`{"error": "Something went wrong"}`))
@@ -58,7 +57,17 @@ func (cfg *apiConfig) handlePOSTChirps(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(201)
-	jsonReturn, err := json.Marshal(returnChirp)
+	type dataReturn struct {
+		ID       int    `json:"id"`
+		Body     string `json:"body"`
+		AuthorID int    `json:"author_id"`
+	}
+	finalReturn := dataReturn{
+		ID:       returnChirp.ID,
+		Body:     returnChirp.Body,
+		AuthorID: returnChirp.AuthorID,
+	}
+	jsonReturn, err := json.Marshal(finalReturn)
 	if err != nil {
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(500)
@@ -86,12 +95,55 @@ func filteredBody(jsonStruct database.Chirp) (database.Chirp, error) {
 }
 
 func (cfg *apiConfig) handleGETValidation(w http.ResponseWriter, r *http.Request) {
+	s := r.URL.Query().Get("author_id")
+	defSort := "asc"
+	reqSort := r.URL.Query().Get("sort")
+	if reqSort == "" {
+		reqSort = defSort
+	}
+	if s != "" {
+		id, err := strconv.Atoi(s)
+		if err != nil {
+			http.Error(w, "could not convert string id", 500)
+			return
+		}
+		authorChirps, err := cfg.db.GetAuthorChirps(id)
+		if err != nil {
+			http.Error(w, "could not get chirps for author", 500)
+			return
+		}
+		if reqSort == "desc" {
+			sort.Slice(authorChirps, func(i, j int) bool {
+				return authorChirps[i].ID > authorChirps[j].ID
+			})
+		} else {
+			sort.Slice(authorChirps, func(i, j int) bool {
+				return authorChirps[i].ID < authorChirps[j].ID
+			})
+		}
+		data, err := json.Marshal(authorChirps)
+		if err != nil {
+			http.Error(w, "Could not marshal data", 500)
+			return
+		}
+		responseWithJson(w, 200, data)
+		return
+	}
 	chirps, err := cfg.db.GetChirps()
 	if err != nil {
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(500)
 		w.Write([]byte(`{"error": "Something went wrong"}`))
 		return
+	}
+	if reqSort == "desc" {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].ID > chirps[j].ID
+		})
+	} else {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].ID < chirps[j].ID
+		})
 	}
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(200)
@@ -102,6 +154,7 @@ func (cfg *apiConfig) handleGETValidation(w http.ResponseWriter, r *http.Request
 		w.Write([]byte(`{"error": "Something went wrong"}`))
 		return
 	}
+
 	w.Write(jsonChirps)
 }
 
